@@ -12,7 +12,7 @@ const useGetAllMessage = (setConvos) => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          `http://10.223.218.137:2000/message/${seletedUser._id}`,
+          `https://real-time-chat-1-7oz0.onrender.com/message/${seletedUser._id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

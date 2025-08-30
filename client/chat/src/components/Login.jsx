@@ -28,7 +28,7 @@ export default function Login() {
     };
 
     const res = await axios.post(
-      "http://10.223.218.137:2000/users/login",
+      "https://real-time-chat-1-7oz0.onrender.com/users/login",
       payload
     );
     console.log(res);

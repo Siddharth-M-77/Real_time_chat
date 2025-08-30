@@ -10,7 +10,7 @@ import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
 
 // const socket = io("http://192.168.1.10:2000");
-const socket = io("http://10.223.218.137:2000");
+const socket = io("https://real-time-chat-1-7oz0.onrender.com");
 
 export default function MessengerUI() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -122,7 +122,7 @@ export default function MessengerUI() {
         formData.append("file", file);
 
         const res = await axios.post(
-          `http://10.223.218.137:2000/message/send/${selectedId}`,
+          `https://real-time-chat-1-7oz0.onrender.com/message/send/${selectedId}`,
           formData,
           {
             headers: {
@@ -151,7 +151,7 @@ export default function MessengerUI() {
         socket.emit("sendMessage", msgWithText);
       } else if (draft.trim()) {
         const res = await axios.post(
-          `http://10.223.218.137:2000/message/send/${selectedId}`,
+          `https://real-time-chat-1-7oz0.onrender.com/message/send/${selectedId}`,
           { message: draft.trim() },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -214,7 +214,7 @@ export default function MessengerUI() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://10.223.218.137:2000/message/${u._id}`,
+        `https://real-time-chat-1-7oz0.onrender.com/message/${u._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

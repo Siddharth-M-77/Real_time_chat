@@ -11,7 +11,7 @@ const useGetOtherUsers = () => {
       try {
         const token = localStorage.getItem("token");
         const data = await axios.get(
-          "http://10.223.218.137:2000/users/get-other-users",
+          "https://real-time-chat-1-7oz0.onrender.com/users/get-other-users",
           {
             headers: {
               Authorization: `Bearer ${token}`,
