@@ -1,14 +1,17 @@
 import { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { setAuthUser } from "../redux/userSlice";
 import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+
 export default function Login() {
   const [formData, setFormData] = useState({
-    fullname: "",
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -19,35 +22,42 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    // Same payload object
-    const payload = {
-      fullname: formData.fullname,
-      email: formData.email,
-      password: formData.password,
-    };
+    try {
+      const res = await axios.post(
+        "https://real-time-chat-1-7oz0.onrender.com/users/login",
+        formData
+      );
 
-    const res = await axios.post(
-      "https://real-time-chat-1-7oz0.onrender.com/users/login",
-      payload
-    );
-    console.log(res);
-    if (res.data.success) {
-      localStorage.setItem("token", res.data.token);
-      dispatch(setAuthUser(res.data.user));
-      navigate("/chat");
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+        dispatch(setAuthUser(res.data.user));
+        toast.success(`👋 Welcome back, ${res.data.user.fullname || "User"}!`);
+        setTimeout(() => navigate("/chat"), 1500);
+      } else {
+        toast.error(res.data.message || "Login failed!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("⚠️ Something went wrong. Please try again!");
+    } finally {
+      setLoading(false);
     }
-    alert(`Welcome, ${payload.fullname}!`);
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen ">
-      <div className=" shadow-lg rounded-2xl p-8 w-96">
-        <h2 className="text-2xl font-bold text-center t mb-6">Login</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      <div className="bg-white shadow-xl rounded-2xl p-8 w-96 border border-gray-100">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
+          Welcome Back 👋
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email */}
           <div>
             <label className="block text-gray-600 font-medium mb-1">
-              Email
+              Email Address
             </label>
             <input
               type="email"
@@ -55,7 +65,7 @@ export default function Login() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               required
             />
           </div>
@@ -71,18 +81,42 @@ export default function Login() {
               value={formData.password}
               onChange={handleChange}
               placeholder="Enter your password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               required
             />
           </div>
 
+          {/* Login Button */}
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-all"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium flex justify-center items-center"
           >
-            Login
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-2 my-6">
+          <div className="h-px flex-1 bg-gray-200"></div>
+          <p className="text-gray-400 text-sm">OR</p>
+          <div className="h-px flex-1 bg-gray-200"></div>
+        </div>
+
+        {/* Register Redirect */}
+        <p className="text-center text-gray-600 text-sm">
+          Don’t have an account?{" "}
+          <Link
+            to="/register"
+            className="text-blue-600 font-medium hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
       </div>
     </div>
   );

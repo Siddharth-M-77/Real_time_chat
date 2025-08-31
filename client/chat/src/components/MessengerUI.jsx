@@ -4,10 +4,12 @@ import io from "socket.io-client";
 import { Search, Send, MoreVertical, Phone, Video, Smile } from "lucide-react";
 import useGetOtherUsers from "../hooks/useGetOtherUsers.js";
 import { useDispatch, useSelector } from "react-redux";
-import { setSeletedUser } from "../redux/userSlice.js";
+import { logout, setSeletedUser } from "../redux/userSlice.js";
 import useGetAllMessage from "../hooks/useGetAllMessage.js";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const socket = io("https://real-time-chat-1-7oz0.onrender.com");
 
@@ -259,6 +261,15 @@ export default function MessengerUI() {
     return bTime - aTime;
   });
 
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // JWT clear
+    dispatch(logout()); // Redux clear
+    navigate("/"); // Login page pe bhejo
+    toast.success("👋 Logged out successfully!");
+  };
+
   const HeaderActions = () => (
     <div className="flex items-center gap-2">
       <button className="p-2 hover:bg-gray-100 rounded-xl" title="Audio call">
@@ -267,8 +278,12 @@ export default function MessengerUI() {
       <button className="p-2 hover:bg-gray-100 rounded-xl" title="Video call">
         <Video size={18} />
       </button>
-      <button className="p-2 hover:bg-gray-100 rounded-xl" title="More">
-        <MoreVertical size={18} />
+      <button
+        onClick={handleLogout}
+        className="p-2 hover:bg-gray-100 rounded-xl text-red-500"
+        title="Logout"
+      >
+        🚪
       </button>
     </div>
   );

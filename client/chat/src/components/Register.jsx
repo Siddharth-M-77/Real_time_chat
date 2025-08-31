@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -8,6 +9,7 @@ export default function Register() {
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -18,36 +20,36 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const payload = {
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-    };
+    setLoading(true);
 
     try {
       const res = await axios.post(
         "http://110.223.218.137:2000/users/register",
-        payload
+        formData
       );
 
       if (res.data.success) {
-        alert("Registration Successful!");
-        navigate("/login"); // Register ke baad login pe bhej dega
+        toast.success("🎉 Registration Successful!");
+        setTimeout(() => navigate("/"), 1500);
       } else {
-        alert(res.data.message || "Something went wrong!");
+        toast.error(res.data.message || "Something went wrong!");
       }
     } catch (err) {
       console.error(err);
-      alert("Error registering user!");
+      toast.error("⚠️ Error registering user!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen ">
-      <div className="shadow-lg rounded-2xl p-8 w-96">
-        <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-white">
+      <div className="bg-white shadow-xl rounded-2xl p-8 w-96 border border-gray-100">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
+          Create Account ✨
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Username */}
           <div>
             <label className="block text-gray-600 font-medium mb-1">
@@ -59,7 +61,7 @@ export default function Register() {
               value={formData.username}
               onChange={handleChange}
               placeholder="Enter your username"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition"
               required
             />
           </div>
@@ -67,7 +69,7 @@ export default function Register() {
           {/* Email */}
           <div>
             <label className="block text-gray-600 font-medium mb-1">
-              Email
+              Email Address
             </label>
             <input
               type="email"
@@ -75,7 +77,7 @@ export default function Register() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition"
               required
             />
           </div>
@@ -91,18 +93,42 @@ export default function Register() {
               value={formData.password}
               onChange={handleChange}
               placeholder="Enter your password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition"
               required
             />
           </div>
 
+          {/* Register Button */}
           <button
             type="submit"
-            className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-all"
+            disabled={loading}
+            className="w-full bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition font-medium flex justify-center items-center"
           >
-            Register
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              "Register"
+            )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-2 my-6">
+          <div className="h-px flex-1 bg-gray-200"></div>
+          <p className="text-gray-400 text-sm">OR</p>
+          <div className="h-px flex-1 bg-gray-200"></div>
+        </div>
+
+        {/* Login Redirect */}
+        <p className="text-center text-gray-600 text-sm">
+          Already have an account?{" "}
+          <Link
+            to="/"
+            className="text-green-600 font-medium hover:underline"
+          >
+            Login
+          </Link>
+        </p>
       </div>
     </div>
   );
