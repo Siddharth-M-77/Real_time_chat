@@ -24,7 +24,7 @@ export default function Register() {
 
     try {
       const res = await axios.post(
-        "http://110.223.218.137:2000/users/register",
+        "https://real-time-chat-1-7oz0.onrender.com/users/register",
         formData
       );
 
