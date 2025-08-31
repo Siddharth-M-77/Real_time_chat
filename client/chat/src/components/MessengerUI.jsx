@@ -283,7 +283,7 @@ export default function MessengerUI() {
         className="p-2 hover:bg-gray-100 rounded-xl text-red-500"
         title="Logout"
       >
-        🚪
+        Logout
       </button>
     </div>
   );
