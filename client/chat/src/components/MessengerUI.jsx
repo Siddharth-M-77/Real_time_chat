@@ -9,7 +9,6 @@ import useGetAllMessage from "../hooks/useGetAllMessage.js";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
 
-// const socket = io("http://192.168.1.10:2000");
 const socket = io("https://real-time-chat-1-7oz0.onrender.com");
 
 export default function MessengerUI() {
@@ -19,7 +18,8 @@ export default function MessengerUI() {
   const [selectedId, setSelectedId] = useState(null);
   const [showEmoji, setShowEmoji] = useState(false);
   const [loadingImages, setLoadingImages] = useState({});
-  const [receiverTyping, setReceiverTyping] = useState(false); // 🟢 Typing state
+  const [receiverTyping, setReceiverTyping] = useState(false);
+  const textareaRef = useRef(null);
 
   const dispatch = useDispatch();
   const [convos, setConvos] = useState({});
@@ -38,11 +38,19 @@ export default function MessengerUI() {
   const currentUser = users?.find((u) => u._id === selectedId) || {};
   const bottomRef = useRef(null);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    }
+  }, [draft]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedId, convos]);
 
-  // --- socket join + receive + typing
   useEffect(() => {
     if (!authUser?._id) return;
     socket.emit("join", authUser._id);
@@ -81,7 +89,6 @@ export default function MessengerUI() {
       }));
     });
 
-    // 🟢 Listen for typing events
     socket.on("typing", ({ senderId, isTyping }) => {
       if (senderId === selectedId) setReceiverTyping(isTyping);
     });
@@ -92,7 +99,6 @@ export default function MessengerUI() {
     };
   }, [authUser, selectedId]);
 
-  // --- Send message (text/file)
   const sendMessage = async (file = null) => {
     if (!selectedId) return;
 
@@ -161,7 +167,6 @@ export default function MessengerUI() {
         socket.emit("sendMessage", { ...msg, text: msg.message });
       }
 
-      // 🟢 Stop typing after send
       socket.emit("typing", {
         senderId: authUser._id,
         receiverId: selectedId,
@@ -172,7 +177,6 @@ export default function MessengerUI() {
     }
   };
 
-  // --- Typing handler (debounced)
   let typingTimeout;
   const handleDraftChange = (e) => {
     setDraft(e.target.value);
@@ -200,7 +204,6 @@ export default function MessengerUI() {
     }
   };
 
-  // --- Select user
   const handleSeletedUser = async (u) => {
     setSelectedId(u._id);
     setSidebarOpen(false);
@@ -271,23 +274,41 @@ export default function MessengerUI() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="mx-auto max-w-7xl px-4 py-6 grid md:grid-cols-12 gap-6">
+    <div className="min-h-screen bg-gray-100">
+      <div className="mx-auto max-w-7xl px-2 sm:px-4 py-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Mobile menu button */}
+        <button
+          className="md:hidden p-2 bg-white rounded-lg shadow mb-2"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+
         {/* Sidebar */}
         <AnimatePresence>
-          {(sidebarOpen ||
-            typeof window === "undefined" ||
-            window.innerWidth >= 768) && (
+          {(sidebarOpen || window.innerWidth >= 768) && (
             <motion.aside
               key="sidebar"
-              initial={{ x: -20, opacity: 0 }}
+              initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -20, opacity: 0 }}
+              exit={{ x: -300, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 26 }}
-              className="md:col-span-4 lg:col-span-3 bg-white border rounded-2xl shadow-sm overflow-hidden h-[78vh] md:h-[84vh]"
+              className="md:col-span-4 lg:col-span-3 bg-white border rounded-2xl shadow-sm overflow-hidden fixed md:static top-0 left-0 w-4/5 sm:w-1/2 md:w-auto h-full md:h-[calc(100vh-2rem)] z-20"
             >
-              <div className="p-4 border-b">
-                <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl">
+              <div className="p-4 border-b flex items-center justify-between">
+                <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl flex-1">
                   <Search size={18} />
                   <input
                     value={query}
@@ -296,9 +317,27 @@ export default function MessengerUI() {
                     className="w-full bg-transparent outline-none text-sm"
                   />
                 </div>
+                <button
+                  className="md:hidden p-2"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
               </div>
 
-              <div className="overflow-y-auto h-[calc(78vh-72px)] md:h-[calc(84vh-72px)]">
+              <div className="overflow-y-auto h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)]">
                 {sortedUsers.length === 0 ? (
                   <div className="p-6 text-center text-gray-500">
                     No matches
@@ -315,9 +354,9 @@ export default function MessengerUI() {
                       <img
                         src={u.profile}
                         alt={u.username}
-                        className="w-11 h-11 rounded-full object-cover"
+                        className="w-10 h-10 rounded-full object-cover"
                       />
-                      <div className="flex-1 text-left">
+                      <div className="flex-1 text-left overflow-hidden">
                         <p className="font-medium text-gray-800 truncate flex items-center gap-2">
                           {u.username}
                           {convoMeta[u._id]?.unread && (
@@ -337,8 +376,7 @@ export default function MessengerUI() {
         </AnimatePresence>
 
         {/* Chat area */}
-        {/* Chat area */}
-        <section className="md:col-span-8 lg:col-span-9 bg-white border rounded-2xl shadow-sm h-[78vh] md:h-[84vh] flex flex-col overflow-hidden">
+        <section className="md:col-span-8 lg:col-span-9 bg-white border rounded-2xl shadow-sm h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
           {currentUser?._id && (
             <div className="flex flex-col px-4 py-3 border-b">
               <div className="flex items-center justify-between">
@@ -358,36 +396,60 @@ export default function MessengerUI() {
 
               {/* Typing indicator */}
               {receiverTyping && selectedId && (
-                <div className="flex items-center gap-2 ml-12 mt-1">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 ml-12 mt-2"
+                >
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-150"></span>
-                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-300"></span>
+                    <motion.span
+                      className="w-2 h-2 bg-blue-500 rounded-full"
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.6 }}
+                    />
+                    <motion.span
+                      className="w-2 h-2 bg-blue-500 rounded-full"
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 0.6,
+                        delay: 0.2,
+                      }}
+                    />
+                    <motion.span
+                      className="w-2 h-2 bg-blue-500 rounded-full"
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 0.6,
+                        delay: 0.4,
+                      }}
+                    />
                   </div>
                   <p className="text-xs text-blue-500">
                     {currentUser.username} is typing...
                   </p>
-                </div>
+                </motion.div>
               )}
             </div>
           )}
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-gray-50 relative">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
             <AnimatePresence initial={false}>
               {(convos[selectedId] || []).map((m) => (
                 <motion.div
                   key={m.id}
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
                   className={`flex ${
                     m.from === "me" ? "justify-end" : "justify-start"
                   }`}
                 >
                   <div
-                    className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm shadow ${
+                    className={`max-w-[70%] sm:max-w-[60%] rounded-2xl px-4 py-2 text-sm shadow break-words ${
                       m.from === "me"
                         ? "bg-blue-600 text-white"
                         : "bg-white text-gray-800 border"
@@ -400,22 +462,21 @@ export default function MessengerUI() {
                         <img
                           src={m.text}
                           alt={m.fileName || "image"}
-                          className="max-w-xs rounded-xl"
+                          className="max-w-full sm:max-w-[300px] rounded-xl"
                         />
                       ) : (
                         <a
                           href={m.text}
                           target="_blank"
                           rel="noreferrer"
-                          className="underline text-blue-600"
+                          className="underline text-blue-600 hover:text-blue-800"
                         >
                           📎 {m.fileName || "Download File"}
                         </a>
                       )
                     ) : (
-                      <p>{m.text}</p>
+                      <p className="break-words">{m.text}</p>
                     )}
-
                     <p className="mt-1 text-[10px] text-gray-400">
                       {new Date(m.at).toLocaleTimeString([], {
                         hour: "2-digit",
@@ -430,7 +491,7 @@ export default function MessengerUI() {
           </div>
 
           {/* Composer */}
-          <div className="border-t p-3 flex gap-2 items-end relative">
+          <div className="border-t p-3 flex gap-2 items-end relative bg-white">
             <button
               onClick={() => setShowEmoji((prev) => !prev)}
               className="p-2 rounded-full hover:bg-gray-100"
@@ -455,7 +516,7 @@ export default function MessengerUI() {
             />
 
             {showEmoji && (
-              <div className="absolute bottom-14 left-2 z-10">
+              <div className="absolute bottom-16 left-2 z-20">
                 <EmojiPicker
                   onEmojiClick={(emoji) =>
                     setDraft((prev) => prev + emoji.emoji)
@@ -465,17 +526,17 @@ export default function MessengerUI() {
             )}
 
             <textarea
+              ref={textareaRef}
               value={draft}
-              onChange={handleDraftChange} // call typing emitter inside this
+              onChange={handleDraftChange}
               onKeyDown={onKeyDown}
-              rows={1}
               placeholder="Type a message"
-              className="flex-1 resize-none outline-none text-sm border rounded-xl px-3 py-2"
+              className="flex-1 resize-none outline-none text-sm border rounded-xl px-3 py-2 max-h-32 scrollbar-thin"
             />
 
             <button
               onClick={() => sendMessage()}
-              className="px-4 py-2 rounded-xl bg-blue-600 text-white"
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
             >
               <Send size={16} />
             </button>
